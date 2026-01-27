@@ -369,10 +369,10 @@ class Order extends Model {
 				return ! empty( $this->data->get_id() ) ? $this->data->get_id() : null;
 			},
 			'id'               => function () {
-				return ! empty( $this->ID ) ? Relay::toGlobalId( 'order', "{$this->ID}" ) : null;
+				return ! empty( $this->data->get_id() ) ? Relay::toGlobalId( 'order', "{$this->data->get_id()}" ) : null;
 			},
 			'databaseId'       => function () {
-				return $this->ID;
+				return $this->data->get_id();
 			},
 			'parent_id'        => function () {
 				return ! empty( $this->data->get_parent_id() ) ? $this->data->get_parent_id() : null;
