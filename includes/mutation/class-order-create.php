@@ -216,10 +216,20 @@ class Order_Create {
 				$order->set_prices_include_tax( 'yes' === get_option( 'woocommerce_prices_include_tax' ) );
 				$order->calculate_totals( true );
 
+				if ( ! empty( $input['paymentMethod'] ) ) {
+					$order->set_payment_method( (string) $input['paymentMethod'] ); // e.g. 'stripe', 'bacs'
+				}
+
+				if ( ! empty( $input['paymentMethodTitle'] ) ) {
+					$order->set_payment_method_title( (string) $input['paymentMethodTitle'] );
+				}
+
 				// Set status.
 				if ( ! empty( $input['status'] ) ) {
 					$order->set_status( $input['status'] );
 				}
+
+				$order->save();
 
 				// Actions for after the order is saved.
 				if ( ! empty( $input['isPaid'] ) ) {
