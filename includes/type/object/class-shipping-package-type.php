@@ -21,6 +21,19 @@ class Shipping_Package_Type {
 	 */
 	public static function register() {
 		register_graphql_object_type(
+			'ShippingPackageParcel',
+			[
+				'description' => __( 'Shipping package parcel', 'wp-graphql-woocommerce' ),
+				'fields'      => [
+					'length' => [ 'type' => 'Float' ],
+					'width'  => [ 'type' => 'Float' ],
+					'height' => [ 'type' => 'Float' ],
+					'weight' => [ 'type' => 'Float' ],
+				],
+			]
+		);
+
+		register_graphql_object_type(
 			'ShippingPackage',
 			[
 				'description' => __( 'Shipping package object', 'wp-graphql-woocommerce' ),
@@ -45,6 +58,47 @@ class Shipping_Package_Type {
 						'description' => __( 'Shipping package rates', 'wp-graphql-woocommerce' ),
 						'resolve'     => static function ( $source ) {
 							return ! empty( $source['rates'] ) ? $source['rates'] : null;
+						},
+					],
+					'parcels' => [
+						'type'        => [ 'list_of' => 'ShippingPackageParcel' ],
+						'description' => __( 'Flat list of product parcels contained in this shipping package.', 'wp-graphql-woocommerce' ),
+						'resolve'     => static function ( $source ) {
+							$parcels = [];
+
+							if ( empty( $source['contents'] ) || ! is_array( $source['contents'] ) ) {
+								return [];
+							}
+
+							foreach ( $source['contents'] as $values ) {
+								if ( empty( $values['data'] ) || ! $values['data'] instanceof \WC_Product ) {
+									continue;
+								}
+
+								/** @var \WC_Product $product */
+								$product = $values['data'];
+								$qty     = isset( $values['quantity'] ) ? (int) $values['quantity'] : 0;
+
+								if ( $qty <= 0 ) {
+									continue;
+								}
+
+								$length = (float) wc_format_decimal( $product->get_length() ?: 0 );
+								$width  = (float) wc_format_decimal( $product->get_width() ?: 0 );
+								$height = (float) wc_format_decimal( $product->get_height() ?: 0 );
+								$weight = (float) wc_format_decimal( $product->get_weight() ?: 0 );
+
+								for ( $i = 0; $i < $qty; $i++ ) {
+									$parcels[] = [
+										'length' => $length,
+										'width'  => $width,
+										'height' => $height,
+										'weight' => $weight,
+									];
+								}
+							}
+
+							return $parcels;
 						},
 					],
 					'supportsShippingCalculator' => [
