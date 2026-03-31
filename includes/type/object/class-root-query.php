@@ -319,6 +319,18 @@ class Root_Query {
 							}
 						}
 
+						// PATCH: GUEST ORDERS CANNOT EVER BE SEEN WITH THIS
+						if ( ! $is_authorized && ! get_current_user_id() ) {
+							$order = wc_get_order( $order_id );
+							if ( $order ) {
+								$order_email   = $order->get_billing_email();
+								$session_email = \WC()->customer->get_billing_email();
+								if ( ! empty( $order_email ) && ! empty( $session_email ) && $order_email === $session_email ) {
+										$is_authorized = true;
+								}
+							}
+						}
+
 						// Throw if authorized to view order.
 						if ( ! $is_authorized ) {
 							throw new UserError( __( 'Not authorized to access this order', 'graphql-for-ecommerce' ) );
