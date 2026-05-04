@@ -26,6 +26,7 @@ class Shipping_Package_Type {
 				'description' => __( 'Shipping package parcel', 'wp-graphql-woocommerce' ),
 				'fields'      => [
 					'sku'    => [ 'type' => 'String' ],
+					'parentSku' => [ 'type' => 'String' ],
 					'length' => [ 'type' => 'Float' ],
 					'width'  => [ 'type' => 'Float' ],
 					'height' => [ 'type' => 'Float' ],
@@ -91,6 +92,9 @@ class Shipping_Package_Type {
 								}
 
 								$sku = (string) $product->get_sku();
+								$parentSku = $product->is_type('variation')
+									? get_post_meta( $product->get_parent_id(), '_sku', true )
+									: $product->get_sku();
 								$length = (float) wc_format_decimal( $product->get_length() ?: 0 );
 								$width  = (float) wc_format_decimal( $product->get_width() ?: 0 );
 								$height = (float) wc_format_decimal( $product->get_height() ?: 0 );
@@ -99,6 +103,7 @@ class Shipping_Package_Type {
 								for ( $i = 0; $i < $qty; $i++ ) {
 									$parcels[] = [
 										'sku' 	 => $sku,
+										'parentSku' => $parentSku,
 										'length' => $length,
 										'width'  => $width,
 										'height' => $height,
