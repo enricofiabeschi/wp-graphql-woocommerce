@@ -638,7 +638,7 @@ class Checkout_Mutation {
 
 		self::process_customer( $data );
 
-		WC()->session->init_session_token();
+		do_action( 'woographql_update_session', true );
 
 		$order_id = WC()->checkout->create_order( $data );
 		$order    = wc_get_order( $order_id );
