@@ -491,17 +491,17 @@ class Checkout_Mutation {
 		}
 
 		if ( WC()->cart->needs_shipping() ) {
-			$shipping_country = WC()->customer->get_shipping_country();
+			$shipping_country = isset( $data['shipping_country'] ) ? $data['shipping_country'] : WC()->customer->get_shipping_country();
 
 			if ( empty( $shipping_country ) ) {
-				$errors->add( 'shipping', __( 'Please enter an address to continue.', 'graphql-for-ecommerce' ) );
-			} elseif ( ! in_array( WC()->customer->get_shipping_country(), array_keys( WC()->countries->get_shipping_countries() ), true ) ) {
+				$errors->add( 'shipping', __( 'Please enter an address to continue.', 'wp-graphql-woocommerce' ) );
+			} elseif ( ! in_array( $shipping_country, array_keys( WC()->countries->get_shipping_countries() ), true ) ) {
 				$errors->add(
 					'shipping',
 					sprintf(
 						/* translators: %s: shipping location */
-						__( 'Unfortunately, we do not ship %s. Please enter an alternative shipping address.', 'graphql-for-ecommerce' ),
-						WC()->countries->shipping_to_prefix() . ' ' . WC()->customer->get_shipping_country()
+						__( 'Unfortunately, we do not ship %s. Please enter an alternative shipping address.', 'wp-graphql-woocommerce' ),
+						WC()->countries->shipping_to_prefix() . ' ' . $shipping_country
 					)
 				);
 			} else {
@@ -638,6 +638,9 @@ class Checkout_Mutation {
 		}
 
 		self::process_customer( $data );
+
+		WC()->session->init_session_token();
+
 		$order_id = WC()->checkout->create_order( $data );
 		$order    = wc_get_order( $order_id );
 
