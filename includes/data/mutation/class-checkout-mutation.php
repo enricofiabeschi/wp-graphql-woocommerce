@@ -303,6 +303,7 @@ class Checkout_Mutation {
 			);
 
 			if ( is_wp_error( $customer_id ) ) {
+				wc_clear_notices();
 				throw new UserError( $customer_id->get_error_message() );
 			}
 
@@ -311,6 +312,15 @@ class Checkout_Mutation {
 
 				// As we are now logged in, checkout will need to refresh to show logged in data.
 				WC()->session->set( 'reload_checkout', true );
+			} else {
+				// ALWAYS ENSURE ORDER TO CREATED CUSTOMER ASSOCIATION (the above wc_set_customer_auth_cookie( $customer_id ) does this when authenticate is true) 
+				add_filter(
+					'woocommerce_checkout_customer_id',
+					static function () use ($customer_id) {
+						return $customer_id;
+					},
+					10
+				);
 			}
 
 			// Also, recalculate cart totals to reveal any role-based discounts that were unavailable before registering.
@@ -639,11 +649,8 @@ class Checkout_Mutation {
 
 		self::process_customer( $data );
 
-		if ( ! empty( $data['createaccount'] ) ) {
-			do_action( 'woographql_update_session', true );
-		}
-
 		$order_id = WC()->checkout->create_order( $data );
+		\WPGraphQL\WooCommerce\Model\Order::set_checkout_order_id( absint( $order_id ) );
 		$order    = wc_get_order( $order_id );
 
 		if ( is_wp_error( $order_id ) ) {
