@@ -101,6 +101,22 @@ class Order extends Model {
 	protected $post_type_object;
 
 	/**
+	 * ID of the order just created in the current checkout request.
+	 * Grants access regardless of session state.
+	 *
+	 * @var int|null
+	 */
+	private static $checkout_order_id = null;
+
+	/**
+	 * This is used to pass the authorized to the order model in case i am looking at an order with key. woocommerce always allows this so we always allow this as well.
+	 * Grants access to order data regardless of session state. Only order key needed.
+	 *
+	 * @var int|null
+	 */
+	private static $order_key_authorized_id = null;
+
+	/**
 	 * Order constructor.
 	 *
 	 * @param int|\WC_Data $id - shop_order post-type ID.
@@ -171,6 +187,14 @@ class Order extends Model {
 		parent::__construct( $restricted_cap, $allowed_restricted_fields, 1 );
 	}
 
+	public static function set_checkout_order_id( int $order_id ): void {
+		self::$checkout_order_id = $order_id;
+	}
+
+	public static function set_order_key_authorized_id( int $order_id ): void {
+    self::$order_key_authorized_id = $order_id;
+	}
+
 	/**
 	 * Get the post type for the order
 	 *
@@ -228,7 +252,6 @@ class Order extends Model {
 				break;
 			case 'draft':
 			case 'future':
-			case 'pending':
 				$cap = ! empty( $this->post_type_object )
 					? $this->post_type_object->cap->edit_others_posts
 					: 'manage_woocommerce';
@@ -298,6 +321,16 @@ class Order extends Model {
 		if ( in_array( $this->post_type, $this->get_viewable_order_types(), true ) ) {
 			$customer_id = $order->get_customer_id();
 		}
+
+		// 1. Order just created in this checkout request — always allow.
+    if ( ! empty( self::$checkout_order_id ) && absint( self::$checkout_order_id ) === absint( $order->get_id() ) ) {
+        return true;
+    }
+
+		// 2. Order accessed via valid order key — set by Root_Query resolver.
+		if ( ! empty( self::$order_key_authorized_id ) && absint( self::$order_key_authorized_id ) === absint( $order->get_id() ) ) {
+        return true;
+    }
 
 		// If no customer ID, check if guest order matches current user.
 		if ( 0 === $customer_id ) {

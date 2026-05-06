@@ -302,6 +302,29 @@ class Root_Query {
 						 */
 						$post_type     = get_post_type_object( 'shop_order' );
 						$is_authorized = current_user_can( $post_type->cap->edit_others_posts );
+
+						// Logged in user — check if order belongs to them.
+						if ( ! $is_authorized && get_current_user_id() ) {
+								$orders = wc_get_orders(
+										[
+												'type'          => 'shop_order',
+												'post__in'      => [ $order_id ],
+												'customer_id'   => get_current_user_id(),
+												'no_rows_found' => true,
+												'return'        => 'ids',
+										]
+								);
+
+								if ( in_array( $order_id, $orders, true ) ) {
+										$is_authorized = true;
+								}
+						}
+
+						// Order key access — mirrors WC thank you page behavior.
+						if ( ! $is_authorized && 'order_key' === $id_type ) {
+								$is_authorized = true;
+						}
+
 						if ( ! $is_authorized && get_current_user_id() ) {
 							/** @var \WC_Order[] $orders */
 							$orders = wc_get_orders(
@@ -316,18 +339,6 @@ class Root_Query {
 
 							if ( in_array( $order_id, $orders, true ) ) {
 								$is_authorized = true;
-							}
-						}
-
-						// PATCH: GUEST ORDERS CANNOT EVER BE SEEN WITH THIS
-						if ( ! $is_authorized && ! get_current_user_id() ) {
-							$order = wc_get_order( $order_id );
-							if ( $order ) {
-								$order_email   = $order->get_billing_email();
-								$session_email = \WC()->customer->get_billing_email();
-								if ( ! empty( $order_email ) && ! empty( $session_email ) && $order_email === $session_email ) {
-										$is_authorized = true;
-								}
 							}
 						}
 
