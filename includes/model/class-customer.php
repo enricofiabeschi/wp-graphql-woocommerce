@@ -55,6 +55,7 @@ class Customer extends Model {
 			'isPublic',
 			'id',
 			'databaseId',
+			'ID',
 		];
 
 		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
@@ -89,7 +90,7 @@ class Customer extends Model {
 						: 'guest';
 				},
 				'databaseId'            => function () {
-					return ! empty( $this->ID ) ? $this->ID : null;
+					return ! empty( $this->data->get_id() ) ? absint( $this->data->get_id() ) : null;
 				},
 				'isVatExempt'           => function () {
 					return ! is_null( $this->data->get_is_vat_exempt() ) ? $this->data->get_is_vat_exempt() : null;
